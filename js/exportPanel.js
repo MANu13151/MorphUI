@@ -1,0 +1,196 @@
+// ============================================
+// PALLETE — Export Panel
+// ============================================
+
+import { state, SLOT_LABELS } from './state.js';
+import { showToast } from './toast.js';
+
+let activeExportTab = 'tailwind';
+
+export function initExportPanel() {
+  const modal = document.getElementById('export-modal');
+  const openBtn = document.getElementById('btn-export');
+  const closeBtn = document.getElementById('btn-close-export');
+  const tabContainer = document.getElementById('export-tabs');
+
+  openBtn?.addEventListener('click', () => {
+    modal.style.display = 'flex';
+    renderExportCode();
+  });
+
+  closeBtn?.addEventListener('click', () => { modal.style.display = 'none'; });
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
+  tabContainer?.addEventListener('click', (e) => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    activeExportTab = tab.dataset.tab;
+    tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderExportCode();
+  });
+
+  // Copy
+  document.getElementById('btn-copy-export')?.addEventListener('click', () => {
+    const code = document.getElementById('export-code')?.textContent || '';
+    navigator.clipboard.writeText(code).then(() => {
+      showToast('Code copied to clipboard!');
+    });
+  });
+
+  // Download
+  document.getElementById('btn-download-export')?.addEventListener('click', () => {
+    const code = document.getElementById('export-code')?.textContent || '';
+  const ext = { tailwind: 'js', css: 'css', json: 'json', scss: 'scss' }[activeExportTab];
+    const name = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-palette.${ext}`;
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${name}`);
+  });
+
+  // Keyboard shortcut: Escape to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.style.display === 'flex') {
+      modal.style.display = 'none';
+    }
+  });
+}
+
+function renderExportCode() {
+  const codeEl = document.getElementById('export-code');
+  if (!codeEl) return;
+
+  const p = state.palette;
+
+  switch (activeExportTab) {
+    case 'tailwind':
+      codeEl.textContent = generateTailwindConfig(p);
+      break;
+    case 'css':
+      codeEl.textContent = generateCSSVariables(p);
+      break;
+    case 'json':
+      codeEl.textContent = generateJSONTokens(p);
+      break;
+    case 'scss':
+      codeEl.textContent = generateSCSSVariables(p);
+      break;
+  }
+}
+
+function generateTailwindConfig(palette) {
+  return `// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '${palette.primary}',
+        secondary: '${palette.secondary}',
+        accent: '${palette.accent}',
+        background: '${palette.background}',
+        surface: '${palette.surface}',
+        foreground: '${palette.text}',
+        'foreground-secondary': '${palette.textSecondary}',
+        border: '${palette.border}',
+        success: '${palette.success}',
+        warning: '${palette.warning}',
+        error: '${palette.error}',
+      },
+    },
+  },
+};`;
+}
+
+function generateCSSVariables(palette) {
+  return `:root {
+  /* Primary Colors */
+  --color-primary: ${palette.primary};
+  --color-secondary: ${palette.secondary};
+  --color-accent: ${palette.accent};
+
+  /* Backgrounds */
+  --color-background: ${palette.background};
+  --color-surface: ${palette.surface};
+
+  /* Text */
+  --color-text: ${palette.text};
+  --color-text-secondary: ${palette.textSecondary};
+
+  /* Border */
+  --color-border: ${palette.border};
+
+  /* Semantic */
+  --color-success: ${palette.success};
+  --color-warning: ${palette.warning};
+  --color-error: ${palette.error};
+}`;
+}
+
+function generateJSONTokens(palette) {
+  const tokens = {
+    color: {
+      primary: { value: palette.primary, type: 'color' },
+      secondary: { value: palette.secondary, type: 'color' },
+      accent: { value: palette.accent, type: 'color' },
+      background: { value: palette.background, type: 'color' },
+      surface: { value: palette.surface, type: 'color' },
+      text: { value: palette.text, type: 'color' },
+      textSecondary: { value: palette.textSecondary, type: 'color' },
+      border: { value: palette.border, type: 'color' },
+      success: { value: palette.success, type: 'color' },
+      warning: { value: palette.warning, type: 'color' },
+      error: { value: palette.error, type: 'color' },
+    },
+  };
+  return JSON.stringify(tokens, null, 2);
+}
+
+function generateSCSSVariables(palette) {
+  return `// _palette.scss
+// Generated by Pallete — AI-Powered Theme Engine
+
+// Primary Colors
+$primary: ${palette.primary};
+$secondary: ${palette.secondary};
+$accent: ${palette.accent};
+
+// Backgrounds
+$background: ${palette.background};
+$surface: ${palette.surface};
+
+// Text
+$text: ${palette.text};
+$text-secondary: ${palette.textSecondary};
+
+// Border
+$border: ${palette.border};
+
+// Semantic
+$success: ${palette.success};
+$warning: ${palette.warning};
+$error: ${palette.error};
+
+// Convenience map
+$palette: (
+  "primary": $primary,
+  "secondary": $secondary,
+  "accent": $accent,
+  "background": $background,
+  "surface": $surface,
+  "text": $text,
+  "text-secondary": $text-secondary,
+  "border": $border,
+  "success": $success,
+  "warning": $warning,
+  "error": $error,
+);`;
+}

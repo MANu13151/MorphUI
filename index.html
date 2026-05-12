@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pallete — AI-Powered Color Palette Customization</title>
+  <meta name="description" content="Upload your app design and customize its color palette in real-time with AI. Transform your UI colors instantly with smart suggestions and WCAG accessibility checks.">
+  <meta property="og:title" content="Pallete — AI-Powered Color Palette Customization">
+  <meta property="og:description" content="Upload your app design and customize its color palette in real-time with AI.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/landing.css">
+  <link rel="stylesheet" href="/css/workspace.css">
+  <style>
+    /* SPA view transitions */
+    #app {
+      transition: opacity 0.15s ease;
+      min-height: 100vh;
+    }
+
+    /* When workspace is active, lock body to viewport height (no scroll) */
+    body.workspace-active {
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    body.workspace-active #app {
+      height: 100vh;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- SPA Root -->
+  <div id="app"></div>
+
+  <!-- Toast Container (persistent across views) -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
