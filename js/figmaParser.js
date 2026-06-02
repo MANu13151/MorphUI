@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Figma Node Parser
+// MORPHUI — Figma Node Parser
 // Transforms raw Figma JSON into internal schema
 // ============================================
 

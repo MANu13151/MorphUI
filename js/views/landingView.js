@@ -1,10 +1,11 @@
 // ============================================
-// PALLETE — Landing View
+// MORPHUI — Landing View
 // ============================================
 
 import { navigate } from '../router.js';
+import { showToast } from '../toast.js';
 
-const LOGO_SVG = `<svg viewBox="0 0 32 32" fill="none"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#818cf8"/><stop offset="50%" stop-color="#c084fc"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>`;
+const LOGO_SVG = `<svg viewBox="0 0 32 32" fill="none"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff6b4a"/><stop offset="50%" stop-color="#f5a623"/><stop offset="100%" stop-color="#2dd4a8"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>`;
 
 export function renderLanding() {
   return `
@@ -12,11 +13,12 @@ export function renderLanding() {
   <nav class="navbar" id="navbar">
     <a href="#/" class="navbar-logo">
       ${LOGO_SVG}
-      <span class="logo-gradient">Pallete</span>
+      <span class="logo-gradient">MorphUI</span>
     </a>
     <div class="navbar-links">
       <a href="#features">Features</a>
       <a href="#how-it-works">How It Works</a>
+      <a href="#plugin-setup">Plugin Setup</a>
       <a href="#demo">Try It</a>
     </div>
     <div class="navbar-actions">
@@ -40,34 +42,53 @@ export function renderLanding() {
     </div>
 
     <h1>
-      Customize Your App<br>
+      Transform Your Design<br>
       Colors <span class="gradient-text">Instantly</span>
     </h1>
 
     <p class="hero-subtitle">
-      Upload your design or paste a Figma link. Get AI-powered palette suggestions,
-      real-time preview, and WCAG accessibility scoring — all in one place.
+      Paste a Figma link and your access token — we parse your design
+      and let you remix every color in real time.
     </p>
 
-    <div class="hero-actions">
-      <a href="#/workspace" class="btn btn-primary btn-lg">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Upload Design
-      </a>
-      <span class="hero-divider-text">or</span>
-      <a href="#/workspace" class="btn btn-secondary btn-lg">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Paste Figma Link
-      </a>
-    </div>
+    <!-- Stacked Input Form -->
+    <div class="hero-form" id="hero-form">
+      <div class="hero-form-card">
+        <div class="hero-form-row">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <input type="text" id="figma-link-input" placeholder="Paste your Figma frame URL..." aria-label="Figma link input">
+        </div>
+        <div class="hero-form-row">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="figma-token-input" placeholder="Figma Personal Access Token..." aria-label="Figma token input">
+          <button class="btn btn-primary" id="figma-go-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            Go
+          </button>
+        </div>
+      </div>
 
-    <div class="hero-input-group" id="figma-input-group">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:12px;color:var(--color-text-tertiary);flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      <input type="text" id="figma-link-input" placeholder="Paste your Figma link here..." aria-label="Figma link input">
-      <button class="btn btn-primary" id="figma-go-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        Go
-      </button>
+      <div class="hero-form-helpers">
+        <button type="button" id="token-help-toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          How do I get a token?
+        </button>
+        <span class="helper-separator"></span>
+        <a href="#" id="explore-without-figma">
+          Explore Without Figma →
+        </a>
+      </div>
+
+      <div class="token-help" id="token-help">
+        <div class="token-help-content">
+          <h4>Get Your Figma Token (30 seconds)</h4>
+          <ol>
+            <li>Open <a href="https://www.figma.com/settings" target="_blank" rel="noopener">Figma Settings</a></li>
+            <li>Scroll to <strong>Personal Access Tokens</strong></li>
+            <li>Click <strong>"Generate new token"</strong>, copy it, and paste above</li>
+          </ol>
+        </div>
+      </div>
     </div>
 
     <!-- Hero Preview Mockup -->
@@ -89,22 +110,22 @@ export function renderLanding() {
             <div class="hero-preview-sidebar-item" style="width:75%"></div>
           </div>
           <div class="hero-preview-main">
-            <div class="hero-preview-card" id="hero-card-1" style="background: rgba(129,140,248,0.15)">
+            <div class="hero-preview-card" id="hero-card-1" style="background: rgba(255,107,74,0.15)">
               <div class="card-line" style="width:60%"></div>
               <div class="card-line" style="width:40%;opacity:0.5"></div>
               <div class="card-line" style="width:80%;height:24px;margin-top:auto;background:var(--color-brand-primary);opacity:0.4;border-radius:6px"></div>
             </div>
-            <div class="hero-preview-card" id="hero-card-2" style="background: rgba(192,132,252,0.15)">
+            <div class="hero-preview-card" id="hero-card-2" style="background: rgba(245,166,35,0.15)">
               <div class="card-line" style="width:50%"></div>
               <div class="card-line" style="width:70%;opacity:0.5"></div>
               <div class="card-line" style="width:80%;height:24px;margin-top:auto;background:var(--color-brand-secondary);opacity:0.4;border-radius:6px"></div>
             </div>
-            <div class="hero-preview-card" id="hero-card-3" style="background: rgba(244,114,182,0.15)">
+            <div class="hero-preview-card" id="hero-card-3" style="background: rgba(45,212,168,0.15)">
               <div class="card-line" style="width:65%"></div>
               <div class="card-line" style="width:45%;opacity:0.5"></div>
               <div class="card-line" style="width:80%;height:24px;margin-top:auto;background:var(--color-brand-accent);opacity:0.4;border-radius:6px"></div>
             </div>
-            <div class="hero-preview-chart" style="background: rgba(129,140,248,0.06)">
+            <div class="hero-preview-chart" style="background: rgba(255,107,74,0.06)">
               <div style="display:flex;align-items:flex-end;gap:8px;height:100%">
                 <div style="flex:1;background:var(--color-brand-primary);opacity:0.5;border-radius:4px 4px 0 0;height:60%"></div>
                 <div style="flex:1;background:var(--color-brand-secondary);opacity:0.5;border-radius:4px 4px 0 0;height:80%"></div>
@@ -175,29 +196,82 @@ export function renderLanding() {
     </div>
   </section>
 
-  <!-- How It Works Section -->
+  <!-- How It Works Section — Dual Track -->
   <section class="how-section" id="how-it-works">
     <div class="section-header">
       <span class="label">How It Works</span>
-      <h2>Three Steps to a Perfect Palette</h2>
-      <p>From design upload to export — it's that simple.</p>
+      <h2>Two Ways to Use MorphUI</h2>
+      <p>Whether you just want to explore palettes or retheme an entire Figma file — we've got you.</p>
     </div>
-    <div class="steps-grid">
-      <div class="step-card animate-in">
-        <div class="step-number">1</div>
-        <h3>Upload Your Design</h3>
-        <p>Paste a Figma link or drag & drop your design file. We'll parse and render your UI components.</p>
+    <div class="tracks-container">
+      <div class="track-card animate-in">
+        <span class="track-badge track-badge-quick">⚡ No Setup Needed</span>
+        <h3>Quick Exploration</h3>
+        <ol class="track-steps">
+          <li>Open MorphUI and head to the workspace</li>
+          <li>Pick a mood & personality, generate AI palettes instantly</li>
+          <li>Fine-tune any color with the built-in editor</li>
+          <li>Export as Tailwind config, CSS variables, or JSON tokens</li>
+        </ol>
       </div>
-      <div class="step-card animate-in animate-in-delay-2">
-        <div class="step-number">2</div>
-        <h3>Customize Colors</h3>
-        <p>Edit colors manually or let our AI suggest palettes based on mood and brand personality.</p>
+      <div class="track-card animate-in animate-in-delay-2">
+        <span class="track-badge track-badge-full">🔗 Full Power</span>
+        <h3>Figma Integration</h3>
+        <ol class="track-steps">
+          <li>Paste your Figma URL + Personal Access Token</li>
+          <li>MorphUI fetches & renders a pixel-accurate live preview</li>
+          <li>Edit colors or use AI suggestions — preview updates in real time</li>
+          <li>Push the new palette back to Figma via the MorphUI Sync plugin</li>
+        </ol>
       </div>
-      <div class="step-card animate-in animate-in-delay-4">
-        <div class="step-number">3</div>
-        <h3>Export & Ship</h3>
-        <p>Download your palette as Tailwind config, CSS variables, or JSON tokens. Ready for production.</p>
+    </div>
+  </section>
+
+  <!-- Plugin Setup Guide -->
+  <section class="plugin-section" id="plugin-setup">
+    <div class="section-header">
+      <span class="label">One-Time Setup</span>
+      <h2>Install the Figma Plugin</h2>
+      <p>Push your remixed palette directly back into your Figma file. Takes under 2 minutes.</p>
+    </div>
+    <div class="plugin-grid">
+      <div class="plugin-step animate-in">
+        <div class="plugin-step-number">1</div>
+        <h4>Download Plugin Files</h4>
+        <p>Grab the 3 files you need — manifest.json, code.js, and ui.html.</p>
+        <a href="/morphui-figma-plugin.zip" download class="btn btn-primary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download ZIP
+        </a>
       </div>
+      <div class="plugin-step animate-in animate-in-delay-1">
+        <div class="plugin-step-number">2</div>
+        <h4>Extract the ZIP</h4>
+        <p>Unzip it anywhere on your computer. You'll see 3 files inside the folder.</p>
+      </div>
+      <div class="plugin-step animate-in animate-in-delay-2">
+        <div class="plugin-step-number">3</div>
+        <h4>Install Figma Desktop</h4>
+        <p>Plugin development requires the <a href="https://www.figma.com/downloads/" target="_blank" rel="noopener">Figma Desktop app</a> (not the web version).</p>
+      </div>
+      <div class="plugin-step animate-in animate-in-delay-3">
+        <div class="plugin-step-number">4</div>
+        <h4>Import the Plugin</h4>
+        <p>In Figma: <strong>Menu → Plugins → Development → Import plugin from manifest</strong></p>
+      </div>
+      <div class="plugin-step animate-in animate-in-delay-4">
+        <div class="plugin-step-number">5</div>
+        <h4>Select manifest.json</h4>
+        <p>Navigate to the folder you extracted and pick the <strong>manifest.json</strong> file.</p>
+      </div>
+      <div class="plugin-step animate-in animate-in-delay-5">
+        <div class="plugin-step-number">6</div>
+        <h4>Done! 🎉</h4>
+        <p>Find it under <strong>Plugins → Development → MorphUI Sync</strong>. Ready to push palettes.</p>
+      </div>
+    </div>
+    <div class="plugin-note">
+      <strong>One-time setup.</strong> Once imported, the plugin stays in your Figma app permanently — no need to repeat these steps.
     </div>
   </section>
 
@@ -218,17 +292,55 @@ export function renderLanding() {
   <footer class="footer">
     <div class="footer-content">
       <a href="#/" class="navbar-logo">
-        <svg viewBox="0 0 32 32" width="24" height="24" fill="none"><defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#818cf8"/><stop offset="50%" stop-color="#c084fc"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg2)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>
-        <span class="logo-gradient">Pallete</span>
+        <svg viewBox="0 0 32 32" width="24" height="24" fill="none"><defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff6b4a"/><stop offset="50%" stop-color="#f5a623"/><stop offset="100%" stop-color="#2dd4a8"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg2)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>
+        <span class="logo-gradient">MorphUI</span>
       </a>
       <div class="footer-links">
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
-        <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/MANu13151/MorphUI" target="_blank" rel="noopener">GitHub</a>
       </div>
-      <span class="footer-copy">&copy; 2026 Pallete. Built with love.</span>
+      <span class="footer-copy">&copy; 2026 MorphUI. Built with love.</span>
     </div>
   </footer>
+
+  <!-- Feedback Widget -->
+  <div class="feedback-overlay" id="feedback-overlay"></div>
+  <div class="feedback-panel" id="feedback-panel">
+    <div class="feedback-panel-header">
+      <h3>💬 Send Feedback</h3>
+      <button class="btn-icon" id="feedback-close" aria-label="Close feedback">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="feedback-panel-body">
+      <div class="feedback-field">
+        <label for="feedback-category">Category</label>
+        <select id="feedback-category">
+          <option value="Suggestion">💡 Suggestion</option>
+          <option value="Bug Report">🐛 Bug Report</option>
+          <option value="Question">❓ Question</option>
+        </select>
+      </div>
+      <div class="feedback-field">
+        <label for="feedback-email">Your Email (optional)</label>
+        <input type="email" id="feedback-email" placeholder="you@example.com">
+      </div>
+      <div class="feedback-field">
+        <label for="feedback-message">Your Message</label>
+        <textarea id="feedback-message" placeholder="Tell us what's on your mind..."></textarea>
+      </div>
+    </div>
+    <div class="feedback-panel-footer">
+      <button class="btn btn-primary" id="feedback-submit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Submit Feedback
+      </button>
+    </div>
+  </div>
+  <button class="feedback-fab" id="feedback-fab" aria-label="Send Feedback">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
   `;
 }
 
@@ -240,25 +352,93 @@ export function initLanding() {
       const current = document.documentElement.getAttribute('data-theme');
       const next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('pallete_theme', next);
+      localStorage.setItem('morphui_theme', next);
     });
   }
 
-  // Figma link input -> navigate to workspace
+  // Figma link + token input -> navigate to workspace
   const figmaInput = document.getElementById('figma-link-input');
+  const tokenInput = document.getElementById('figma-token-input');
   const figmaGoBtn = document.getElementById('figma-go-btn');
 
-  if (figmaGoBtn && figmaInput) {
+  if (figmaGoBtn && figmaInput && tokenInput) {
     figmaGoBtn.addEventListener('click', () => {
       const link = figmaInput.value.trim();
-      if (link) {
-        sessionStorage.setItem('pallete_figma_link', link);
-      }
+      const token = tokenInput.value.trim();
+      if (link) sessionStorage.setItem('morphui_figma_link', link);
+      if (token) sessionStorage.setItem('morphui_figma_token', token);
       navigate('/workspace');
     });
 
     figmaInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tokenInput.focus();
+    });
+
+    tokenInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') figmaGoBtn.click();
+    });
+  }
+
+  // Token help toggle
+  const tokenHelpToggle = document.getElementById('token-help-toggle');
+  const tokenHelp = document.getElementById('token-help');
+  if (tokenHelpToggle && tokenHelp) {
+    tokenHelpToggle.addEventListener('click', () => {
+      tokenHelp.classList.toggle('open');
+    });
+  }
+
+  // Explore without Figma
+  const exploreLink = document.getElementById('explore-without-figma');
+  if (exploreLink) {
+    exploreLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      sessionStorage.setItem('morphui_explore_mode', 'true');
+      navigate('/workspace');
+    });
+  }
+
+  // Feedback widget
+  const feedbackFab = document.getElementById('feedback-fab');
+  const feedbackPanel = document.getElementById('feedback-panel');
+  const feedbackOverlay = document.getElementById('feedback-overlay');
+  const feedbackClose = document.getElementById('feedback-close');
+  const feedbackSubmit = document.getElementById('feedback-submit');
+
+  function openFeedback() {
+    feedbackPanel?.classList.add('open');
+    feedbackOverlay?.classList.add('open');
+  }
+
+  function closeFeedback() {
+    feedbackPanel?.classList.remove('open');
+    feedbackOverlay?.classList.remove('open');
+  }
+
+  feedbackFab?.addEventListener('click', openFeedback);
+  feedbackClose?.addEventListener('click', closeFeedback);
+  feedbackOverlay?.addEventListener('click', closeFeedback);
+
+  if (feedbackSubmit) {
+    feedbackSubmit.addEventListener('click', () => {
+      const category = document.getElementById('feedback-category')?.value || 'Suggestion';
+      const email = document.getElementById('feedback-email')?.value || '(not provided)';
+      const message = document.getElementById('feedback-message')?.value || '';
+
+      if (!message.trim()) {
+        showToast('Please enter a message before submitting.');
+        return;
+      }
+
+      const subject = encodeURIComponent(`[MorphUI Feedback] ${category}`);
+      const body = encodeURIComponent(`Category: ${category}\nFrom: ${email}\n\n${message}`);
+      window.open(`mailto:prakharmanu76@gmail.com?subject=${subject}&body=${body}`, '_self');
+
+      // Clear & close
+      const msgEl = document.getElementById('feedback-message');
+      if (msgEl) msgEl.value = '';
+      closeFeedback();
+      showToast('Thanks for your feedback! 🙌');
     });
   }
 
@@ -283,11 +463,11 @@ export function initLanding() {
 
   // Interactive demo section
   const demoColors = [
-    { key: 'primary', label: 'Primary', color: '#818cf8' },
-    { key: 'secondary', label: 'Secondary', color: '#c084fc' },
-    { key: 'accent', label: 'Accent', color: '#f472b6' },
-    { key: 'background', label: 'Background', color: '#09090b' },
-    { key: 'surface', label: 'Surface', color: '#1e1e24' },
+    { key: 'primary', label: 'Primary', color: '#ff6b4a' },
+    { key: 'secondary', label: 'Secondary', color: '#f5a623' },
+    { key: 'accent', label: 'Accent', color: '#2dd4a8' },
+    { key: 'background', label: 'Background', color: '#0d0d0f' },
+    { key: 'surface', label: 'Surface', color: '#1a1a1e' },
   ];
 
   const demoPalette = document.getElementById('demo-palette');
@@ -356,7 +536,6 @@ export function initLanding() {
   // Smooth scroll for in-page anchor links
   document.querySelectorAll('.navbar-links a[href^="#"]').forEach(link => {
     const href = link.getAttribute('href');
-    // Only handle section anchors, not route anchors
     if (href && !href.startsWith('#/')) {
       link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -371,10 +550,10 @@ export function initLanding() {
   // Hero preview color cycling
   const heroCards = ['hero-card-1', 'hero-card-2', 'hero-card-3'];
   const heroColorSets = [
-    ['rgba(129,140,248,0.15)', 'rgba(192,132,252,0.15)', 'rgba(244,114,182,0.15)'],
-    ['rgba(52,211,153,0.15)', 'rgba(96,165,250,0.15)', 'rgba(251,191,36,0.15)'],
-    ['rgba(248,113,113,0.15)', 'rgba(52,211,153,0.15)', 'rgba(129,140,248,0.15)'],
-    ['rgba(192,132,252,0.15)', 'rgba(244,114,182,0.15)', 'rgba(52,211,153,0.15)'],
+    ['rgba(255,107,74,0.15)', 'rgba(245,166,35,0.15)', 'rgba(45,212,168,0.15)'],
+    ['rgba(45,212,168,0.15)', 'rgba(255,107,74,0.15)', 'rgba(245,166,35,0.15)'],
+    ['rgba(245,166,35,0.15)', 'rgba(45,212,168,0.15)', 'rgba(255,107,74,0.15)'],
+    ['rgba(45,212,168,0.15)', 'rgba(245,166,35,0.15)', 'rgba(255,107,74,0.15)'],
   ];
 
   let heroColorIndex = 0;

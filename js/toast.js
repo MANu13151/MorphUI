@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Toast Utility (shared module)
+// MORPHUI — Toast Utility (shared module)
 // ============================================
 
 export function showToast(message, duration = 3000) {

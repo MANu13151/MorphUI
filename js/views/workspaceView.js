@@ -20,7 +20,7 @@ import {
 import { parseFrame, buildColorMapping } from '../figmaParser.js';
 import { renderReconstruction, applyPaletteVariables } from '../figmaRenderer.js';
 
-const LOGO_SVG = `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#818cf8"/><stop offset="50%" stop-color="#c084fc"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>`;
+const LOGO_SVG = `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff6b4a"/><stop offset="50%" stop-color="#f5a623"/><stop offset="100%" stop-color="#2dd4a8"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>`;
 
 export function renderWorkspace() {
   return `
@@ -30,7 +30,7 @@ export function renderWorkspace() {
       <div class="header-left">
         <a href="#/" class="header-logo">
           ${LOGO_SVG}
-          <span class="logo-gradient">Pallete</span>
+          <span class="logo-gradient">MorphUI</span>
         </a>
         <div class="header-divider"></div>
         <input type="text" class="project-name" id="project-name" value="Untitled Project" aria-label="Project name">
@@ -212,8 +212,20 @@ export function initWorkspace() {
     });
   }
 
-  // Check for Figma link BEFORE initializing preview
-  const figmaLink = sessionStorage.getItem('pallete_figma_link');
+  // Check for Figma link and token from landing page
+  const figmaLink = sessionStorage.getItem('morphui_figma_link');
+  const landingToken = sessionStorage.getItem('morphui_figma_token');
+  const exploreMode = sessionStorage.getItem('morphui_explore_mode');
+
+  // Clean up sessionStorage
+  sessionStorage.removeItem('morphui_figma_link');
+  sessionStorage.removeItem('morphui_figma_token');
+  sessionStorage.removeItem('morphui_explore_mode');
+
+  // If token was entered on landing, save it for workspace use
+  if (landingToken) {
+    localStorage.setItem('morphui_figma_token', landingToken);
+  }
 
   // Initialize all modules
   initColorEditor();
@@ -224,7 +236,6 @@ export function initWorkspace() {
   // Only init live preview immediately if NO Figma link
   // (otherwise we show loading first, then init after)
   if (figmaLink) {
-    sessionStorage.removeItem('pallete_figma_link');
     startFigmaFlow(figmaLink);
   } else {
     initLivePreview();
@@ -271,7 +282,7 @@ export function initWorkspace() {
   // Theme toggle
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
     state.isDark = !state.isDark;
-    localStorage.setItem('pallete_theme', state.isDark ? 'dark' : 'light');
+    localStorage.setItem('morphui_theme', state.isDark ? 'dark' : 'light');
   });
 
   // Return cleanup
@@ -304,10 +315,10 @@ function startFigmaFlow(link) {
   state._figmaParsed = parsed;
 
   // Build embed URL for fallback view
-  state._figmaEmbedUrl = `https://www.figma.com/embed?embed_host=pallete&url=${encodeURIComponent(link)}`;
+  state._figmaEmbedUrl = `https://www.figma.com/embed?embed_host=morphui&url=${encodeURIComponent(link)}`;
 
   // Check for saved token
-  const savedToken = localStorage.getItem('pallete_figma_token');
+  const savedToken = localStorage.getItem('morphui_figma_token');
 
   // Show token input
   showTokenPrompt(savedToken || '');
@@ -356,7 +367,7 @@ function showTokenPrompt(prefillToken) {
         <ol>
           <li>Go to <strong>figma.com</strong> → click your avatar → <strong>Settings</strong></li>
           <li>Scroll to <strong>Personal access tokens</strong></li>
-          <li>Click <strong>Generate new token</strong> → name it "Pallete"</li>
+          <li>Click <strong>Generate new token</strong> → name it "MorphUI"</li>
           <li>Copy the token (starts with <code>figd_</code>)</li>
         </ol>
         <p style="margin-top:8px;font-size:11px;color:var(--color-text-tertiary)">Your token is stored locally and never sent to any server except Figma's API.</p>
@@ -375,8 +386,8 @@ function showTokenPrompt(prefillToken) {
     const remember = document.getElementById('figma-remember-token')?.checked;
     if (!token) { showToast('Please enter your Figma token.'); return; }
     if (!isValidToken(token)) { showToast('Token format looks invalid. It usually starts with figd_'); return; }
-    if (remember) localStorage.setItem('pallete_figma_token', token);
-    else localStorage.removeItem('pallete_figma_token');
+    if (remember) localStorage.setItem('morphui_figma_token', token);
+    else localStorage.removeItem('morphui_figma_token');
     
     // Clear any previous rate limit lock if user manually provides a new token
     clearRateLimit();
@@ -871,10 +882,10 @@ function addFigmaExportButton() {
     const payload = generatePluginPayload();
     const json = JSON.stringify(payload, null, 2);
     navigator.clipboard.writeText(json).then(() => {
-      showToast('Palette JSON copied to clipboard! Paste it into the Pallete Sync Figma plugin.');
+      showToast('Palette JSON copied to clipboard! Paste it into the MorphUI Sync Figma plugin.');
     }).catch(() => {
       // Fallback: show in a modal
-      prompt('Copy this JSON and paste it into the Pallete Sync Figma plugin:', json);
+      prompt('Copy this JSON and paste it into the MorphUI Sync Figma plugin:', json);
     });
   });
 }
@@ -899,7 +910,7 @@ function generatePluginPayload() {
 
   return {
     version: 1,
-    name: state.projectName || 'Pallete Theme',
+    name: state.projectName || 'MorphUI Theme',
     timestamp: new Date().toISOString(),
     palette: { ...state.palette },
     mappings,

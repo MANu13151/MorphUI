@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Live Preview Panel
+// MORPHUI — Live Preview Panel
 // ============================================
 
 import { state } from './state.js';

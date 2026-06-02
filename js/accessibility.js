@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Accessibility (WCAG) Panel
+// MORPHUI — Accessibility (WCAG) Panel
 // ============================================
 
 import { state } from './state.js';

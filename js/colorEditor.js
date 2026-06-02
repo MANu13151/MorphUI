@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Color Editor Panel
+// MORPHUI — Color Editor Panel
 // ============================================
 
 import { state, SLOT_LABELS } from './state.js';

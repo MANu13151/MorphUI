@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Color Utility Functions
+// MORPHUI — Color Utility Functions
 // ============================================
 
 /**

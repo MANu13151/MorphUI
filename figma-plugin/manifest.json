@@ -1,6 +1,6 @@
 {
-  "name": "Pallete Sync",
-  "id": "pallete-sync-plugin",
+  "name": "MorphUI Sync",
+  "id": "morphui-sync-plugin",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",

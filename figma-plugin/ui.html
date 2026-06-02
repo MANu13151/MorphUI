@@ -196,7 +196,7 @@
 </head>
 <body>
   <div class="header">
-    <h1>Pallete Sync</h1>
+    <h1>MorphUI Sync</h1>
     <span class="badge">v1</span>
   </div>
 
@@ -206,7 +206,7 @@
   </div>
 
   <div class="preview-section" id="preview-section">
-    <div class="empty-state">Paste your Pallete JSON above to preview changes</div>
+    <div class="empty-state">Paste your MorphUI JSON above to preview changes</div>
   </div>
 
   <div id="result-area"></div>
@@ -248,7 +248,7 @@
 
     function renderPreview(data) {
       if (data.mappings.length === 0) {
-        previewSection.innerHTML = '<div class="empty-state">No color changes in this palette. Edit some colors in Pallete first!</div>';
+        previewSection.innerHTML = '<div class="empty-state">No color changes in this palette. Edit some colors in MorphUI first!</div>';
         return;
       }
 

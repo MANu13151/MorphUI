@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — AI Palette Generator
+// MORPHUI — AI Palette Generator
 // ============================================
 
 import { state } from './state.js';

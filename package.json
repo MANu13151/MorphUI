@@ -1,8 +1,8 @@
 {
-  "name": "pallete",
+  "name": "morphui",
   "private": true,
-  "version": "1.0.0",
-  "description": "AI-Powered Color Palette Customization Platform",
+  "version": "2.0.0",
+  "description": "MorphUI — AI-Powered Design Color Customization Platform",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

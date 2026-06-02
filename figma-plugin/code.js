@@ -1,5 +1,5 @@
 // ============================================
-// Pallete Sync — Figma Plugin (Sandbox Code)
+// MorphUI Sync — Figma Plugin (Sandbox Code)
 // Traverses nodes and replaces fill colors
 // ============================================
 
@@ -82,7 +82,7 @@ figma.ui.onmessage = async (msg) => {
         total: allNodes.length,
       });
 
-      figma.notify(`✅ Pallete Sync: Updated ${changedCount} nodes!`);
+      figma.notify(`✅ MorphUI Sync: Updated ${changedCount} nodes!`);
 
     } catch (err) {
       figma.ui.postMessage({

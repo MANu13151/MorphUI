@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Figma API Integration
+// MORPHUI — Figma API Integration
 // ============================================
 
 /**
@@ -54,7 +54,7 @@ function handleRateLimit(res) {
  * Used to list available frames. This is API call #1.
  */
 export async function fetchFileData(fileKey, token) {
-  const cacheKey = `pallete_figma_file_${fileKey}`;
+  const cacheKey = `morphui_figma_file_${fileKey}`;
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) {
     try {
@@ -94,7 +94,7 @@ export async function fetchFileData(fileKey, token) {
  * This is API call #2 — only made once per frame selection.
  */
 export async function fetchFrameNodes(fileKey, frameId, token) {
-  const cacheKey = `pallete_figma_frame_${fileKey}_${frameId}`;
+  const cacheKey = `morphui_figma_frame_${fileKey}_${frameId}`;
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) {
     try {

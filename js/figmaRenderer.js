@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Figma Reconstruction Renderer
+// MORPHUI — Figma Reconstruction Renderer
 // Renders internal schema as HTML/CSS using CSS variables
 // ============================================
 

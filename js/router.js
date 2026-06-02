@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Client-Side Hash Router
+// MORPHUI — Client-Side Hash Router
 // ============================================
 
 const routes = new Map();

@@ -1,5 +1,5 @@
 // ============================================
-// PALLETE — Reactive State Management
+// MORPHUI — Reactive State Management
 // ============================================
 
 const MAX_HISTORY = 50;
@@ -8,16 +8,16 @@ const MAX_HISTORY = 50;
  * Default palette — dark mode SaaS dashboard
  */
 const DEFAULT_PALETTE = {
-  primary:       '#818cf8',
-  secondary:     '#c084fc',
-  accent:        '#f472b6',
-  background:    '#09090b',
-  surface:       '#1e1e24',
-  text:          '#f4f4f5',
-  textSecondary: '#a1a1aa',
-  border:        '#27272a',
-  success:       '#34d399',
-  warning:       '#fbbf24',
+  primary:       '#ff6b4a',
+  secondary:     '#f5a623',
+  accent:        '#2dd4a8',
+  background:    '#0d0d0f',
+  surface:       '#1a1a1e',
+  text:          '#f5f0eb',
+  textSecondary: '#9a9a9e',
+  border:        '#2a2a2e',
+  success:       '#2dd4a8',
+  warning:       '#f5a623',
   error:         '#f87171',
 };
 
@@ -196,12 +196,12 @@ class AppState {
       activeDevice: this._activeDevice,
       isDark: this._isDark,
     };
-    localStorage.setItem('pallete_project', JSON.stringify(data));
+    localStorage.setItem('morphui_project', JSON.stringify(data));
   }
 
   load() {
     try {
-      const raw = localStorage.getItem('pallete_project');
+      const raw = localStorage.getItem('morphui_project');
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (data.palette) {
