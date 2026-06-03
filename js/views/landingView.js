@@ -420,7 +420,7 @@ export function initLanding() {
   feedbackOverlay?.addEventListener('click', closeFeedback);
 
   if (feedbackSubmit) {
-    feedbackSubmit.addEventListener('click', () => {
+    feedbackSubmit.addEventListener('click', async () => {
       const category = document.getElementById('feedback-category')?.value || 'Suggestion';
       const email = document.getElementById('feedback-email')?.value || '(not provided)';
       const message = document.getElementById('feedback-message')?.value || '';
@@ -430,15 +430,42 @@ export function initLanding() {
         return;
       }
 
-      const subject = encodeURIComponent(`[MorphUI Feedback] ${category}`);
-      const body = encodeURIComponent(`Category: ${category}\nFrom: ${email}\n\n${message}`);
-      window.open(`mailto:prakharmanu76@gmail.com?subject=${subject}&body=${body}`, '_self');
+      // Show loading state
+      const originalText = feedbackSubmit.innerHTML;
+      feedbackSubmit.disabled = true;
+      feedbackSubmit.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Sending...`;
 
-      // Clear & close
-      const msgEl = document.getElementById('feedback-message');
-      if (msgEl) msgEl.value = '';
-      closeFeedback();
-      showToast('Thanks for your feedback! 🙌');
+      try {
+        const response = await fetch('https://formsubmit.co/ajax/prakharmanu76@gmail.com', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: `[MorphUI Feedback] ${category}`,
+            category: category,
+            email: email,
+            message: message,
+            _template: 'table',
+          }),
+        });
+
+        if (response.ok) {
+          // Clear form & close panel
+          const msgEl = document.getElementById('feedback-message');
+          const emailEl = document.getElementById('feedback-email');
+          if (msgEl) msgEl.value = '';
+          if (emailEl) emailEl.value = '';
+          closeFeedback();
+          showToast('Thanks for your feedback! 🙌');
+        } else {
+          showToast('Failed to send. Please try again.');
+        }
+      } catch (err) {
+        console.error('Feedback submit error:', err);
+        showToast('Network error. Please try again later.');
+      } finally {
+        feedbackSubmit.disabled = false;
+        feedbackSubmit.innerHTML = originalText;
+      }
     });
   }
 
