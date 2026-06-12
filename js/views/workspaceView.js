@@ -17,7 +17,7 @@ import {
   getRateLimitWaitSeconds,
   clearRateLimit,
 } from '../figmaApi.js';
-import { parseFrame, buildColorMapping } from '../figmaParser.js';
+import { parseFrame, buildColorMapping, buildUsageMap } from '../figmaParser.js';
 import { renderReconstruction, applyPaletteVariables } from '../figmaRenderer.js';
 
 const LOGO_SVG = `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff6b4a"/><stop offset="50%" stop-color="#f5a623"/><stop offset="100%" stop-color="#2dd4a8"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="url(#lg)"/><circle cx="11" cy="12" r="3.5" fill="#fff" opacity="0.9"/><circle cx="21" cy="12" r="3.5" fill="#fff" opacity="0.7"/><circle cx="16" cy="21" r="3.5" fill="#fff" opacity="0.5"/></svg>`;
@@ -641,10 +641,17 @@ async function selectAndRenderFrame(frame, token, fileKey) {
     document.getElementById('figma-load-status').textContent = 'Building reconstruction...';
     _parsedSchema = parseFrame(frameNode, _colorMapping);
 
+    // Build usage map: which elements use each palette slot
+    const usageMap = buildUsageMap(_parsedSchema);
+    state._colorUsageMap = usageMap;
+
     // Render the reconstruction
     renderReconstructionView();
     addViewModeToggles('figma');
     addFigmaExportButton();
+
+    // Add click-on-preview handler
+    addPreviewClickHandler();
 
     // Render the color mapping panel in the sidebar
     renderColorMappingPanel();
@@ -686,6 +693,58 @@ async function selectAndRenderFrame(frame, token, fileKey) {
       addViewModeToggles('mock');
     });
   }
+}
+
+// ---- Click-on-Preview: Element → Color Slot ----
+
+function addPreviewClickHandler() {
+  const previewContent = document.getElementById('preview-content');
+  if (!previewContent) return;
+
+  previewContent.addEventListener('click', (e) => {
+    // Find the closest rc-node with a color binding
+    let target = e.target.closest('[data-fill-var], [data-stroke-var], [data-text-var]');
+    if (!target) return;
+
+    // Determine which slot this element belongs to
+    const fillVar = target.dataset.fillVar;
+    const strokeVar = target.dataset.strokeVar;
+    const textVar = target.dataset.textVar;
+    const cssVar = fillVar || textVar || strokeVar;
+
+    if (!cssVar) return;
+
+    const slot = cssVar.replace('--p-', '');
+    if (!slot) return;
+
+    // Select this slot in the sidebar
+    state.activeSlot = slot;
+
+    // Highlight all elements using this slot
+    clearPreviewHighlights();
+    highlightSlotInPreview(slot);
+
+    // Show a toast with the element info
+    const nodeName = target.dataset.nodeName || 'Element';
+    const usageMap = state._colorUsageMap || {};
+    const count = usageMap[slot]?.length || 0;
+    showToast(`${nodeName} → ${SLOT_LABELS[slot] || slot} (${count} elements)`);
+  });
+}
+
+function highlightSlotInPreview(slot) {
+  const previewContent = document.getElementById('preview-content');
+  if (!previewContent) return;
+  const varName = `--p-${slot}`;
+  previewContent.querySelectorAll(`[data-fill-var="${varName}"], [data-stroke-var="${varName}"], [data-text-var="${varName}"]`).forEach(el => {
+    el.classList.add('rc-highlight');
+  });
+}
+
+function clearPreviewHighlights() {
+  document.querySelectorAll('.rc-highlight').forEach(el => {
+    el.classList.remove('rc-highlight');
+  });
 }
 
 // ---- Render Reconstruction View ----

@@ -219,6 +219,7 @@ function renderText(el, node) {
   if (node.textColor) {
     if (node.textColor.var) {
       el.style.color = `var(${node.textColor.var})`;
+      el.dataset.textVar = node.textColor.var;
     } else {
       el.style.color = node.textColor.hex;
     }

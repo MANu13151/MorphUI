@@ -212,6 +212,69 @@
   z-index: 10;
 }
 
+/* Figma reconstruction highlight */
+@keyframes rcHighlightPulse {
+  0%, 100% { outline: 2px solid var(--color-brand-primary); outline-offset: 1px; }
+  50%      { outline: 3px solid var(--color-brand-primary); outline-offset: 2px; }
+}
+
+.rc-highlight {
+  animation: rcHighlightPulse 1s ease-in-out infinite;
+  z-index: 50 !important;
+  cursor: pointer;
+}
+
+/* Clickable elements in Figma preview */
+.rc-node[data-fill-var],
+.rc-node[data-stroke-var],
+.rc-node[data-text-var] {
+  cursor: pointer;
+}
+
+.rc-node[data-fill-var]:hover,
+.rc-node[data-stroke-var]:hover,
+.rc-node[data-text-var]:hover {
+  outline: 1px dashed var(--color-brand-primary-glow);
+  outline-offset: 1px;
+}
+
+/* ---- Usage Chips in Color Slots ---- */
+.color-slot-usage {
+  font-size: 10px;
+  color: var(--color-brand-primary);
+  font-weight: var(--weight-medium);
+  margin-bottom: 2px;
+}
+
+.color-slot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+
+.usage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  color: var(--color-text-secondary);
+  background: var(--glass-bg);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usage-more {
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  padding: 1px 4px;
+}
+
 /* ---- Inline Color Editor ---- */
 .color-editor-expanded {
   padding: var(--space-4);

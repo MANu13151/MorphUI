@@ -304,3 +304,64 @@ export function buildColorMapping(paletteMap) {
   }
   return mapping;
 }
+
+/**
+ * Walk a parsed schema tree and build a usage map:
+ * { slotName: [{ name, type, id, context }] }
+ *
+ * This tells us exactly which Figma elements use each palette color,
+ * enabling usage counts, semantic labels, and click-to-highlight.
+ */
+export function buildUsageMap(schema) {
+  const usageMap = {};
+
+  function addUsage(slot, node, context) {
+    if (!slot) return;
+    if (!usageMap[slot]) usageMap[slot] = [];
+    // Avoid duplicates for the same node
+    if (!usageMap[slot].some(e => e.id === node.id && e.context === context)) {
+      usageMap[slot].push({
+        name: node.name || 'Unnamed',
+        type: node.type || 'container',
+        id: node.id,
+        context, // 'fill', 'stroke', 'text', 'gradient'
+      });
+    }
+  }
+
+  function walk(node) {
+    if (!node) return;
+
+    // Check fill
+    if (node.fill?.var) {
+      addUsage(node.fill.var.replace('--p-', ''), node, 'fill');
+    }
+
+    // Check stroke
+    if (node.stroke?.var) {
+      addUsage(node.stroke.var.replace('--p-', ''), node, 'stroke');
+    }
+
+    // Check text color
+    if (node.textColor?.var) {
+      addUsage(node.textColor.var.replace('--p-', ''), node, 'text');
+    }
+
+    // Check gradient stops
+    if (node.gradient?.stops) {
+      for (const stop of node.gradient.stops) {
+        if (stop.color?.var) {
+          addUsage(stop.color.var.replace('--p-', ''), node, 'gradient');
+        }
+      }
+    }
+
+    // Recurse into children
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  }
+
+  walk(schema);
+  return usageMap;
+}
