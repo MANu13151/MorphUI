@@ -1,12 +1,22 @@
-// ============================================
-// MORPHUI — Color Editor Panel
-// ============================================
-
 import { state, SLOT_LABELS } from './state.js';
 import { hexToRgb, rgbToHex, hexToHsl, hslToHex, isValidHex, normalizeHex } from './colorUtils.js';
 import { showToast } from './toast.js';
 
 let activeEditorSlot = null;
+
+const SLOT_DESCRIPTIONS = {
+  primary:       'Buttons, links, active states',
+  secondary:     'Accents, badges, secondary buttons',
+  accent:        'Highlights, CTAs, tags',
+  background:    'Page background',
+  surface:       'Cards, panels, nav bar',
+  text:          'Headings, body text',
+  textSecondary: 'Labels, captions, muted text',
+  border:        'Dividers, outlines',
+  success:       'Success states, "Active" tags',
+  warning:       'Warning states, "Pending" tags',
+  error:         'Error states, alerts',
+};
 
 export function initColorEditor() {
   const list = document.getElementById('color-slot-list');
@@ -25,12 +35,14 @@ function renderSlots(container) {
   container.innerHTML = slots.map(key => {
     const color = palette[key];
     const label = SLOT_LABELS[key];
+    const desc = SLOT_DESCRIPTIONS[key] || '';
     const isActive = state.activeSlot === key;
     return `
       <div class="color-slot ${isActive ? 'active' : ''}" data-slot="${key}" id="slot-${key}">
         <div class="color-slot-swatch" style="background:${color}"></div>
         <div class="color-slot-info">
           <div class="color-slot-name">${label}</div>
+          <div class="color-slot-desc">${desc}</div>
           <div class="color-slot-value">${color.toUpperCase()}</div>
         </div>
         <button class="btn-icon color-slot-copy" data-copy="${color}" aria-label="Copy ${label} color" style="width:28px;height:28px;border:none">
@@ -41,13 +53,21 @@ function renderSlots(container) {
     `;
   }).join('');
 
-  // Bind events
+  // Bind click events
   container.querySelectorAll('.color-slot').forEach(el => {
     el.addEventListener('click', (e) => {
       if (e.target.closest('.color-slot-copy')) return;
       if (e.target.closest('.color-editor-expanded')) return;
       const slot = el.dataset.slot;
       state.activeSlot = state.activeSlot === slot ? null : slot;
+    });
+
+    // Hover highlight — dispatch custom events for livePreview to listen to
+    el.addEventListener('mouseenter', () => {
+      document.dispatchEvent(new CustomEvent('slot-highlight', { detail: { slot: el.dataset.slot } }));
+    });
+    el.addEventListener('mouseleave', () => {
+      document.dispatchEvent(new CustomEvent('slot-unhighlight', { detail: { slot: el.dataset.slot } }));
     });
   });
 

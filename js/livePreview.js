@@ -30,6 +30,46 @@ export function initLivePreview() {
   document.getElementById('btn-zoom-in')?.addEventListener('click', () => { state.zoom += 25; });
   document.getElementById('btn-zoom-out')?.addEventListener('click', () => { state.zoom -= 25; });
 
+  // Slot-to-element mapping for hover highlight
+  const slotElementMap = {
+    primary:       ['mock-brand', 'mock-btn-primary', 'mock-sb-1', 'mock-sb-icon-1', 'mock-stat-val-1', 'mock-tag-3'],
+    secondary:     ['mock-btn-secondary', 'mock-sb-icon-2', 'mock-stat-val-2', 'mock-sb-icon-5'],
+    accent:        ['mock-avatar', 'mock-btn-accent', 'mock-sb-icon-3', 'mock-stat-val-3'],
+    background:    ['mock-main'],
+    surface:       ['mock-nav', 'mock-sidebar', 'mock-stat-1', 'mock-stat-2', 'mock-stat-3', 'mock-chart'],
+    text:          ['mock-heading', 'mock-td-1', 'mock-td-2', 'mock-td-3'],
+    textSecondary: ['mock-stat-label-1', 'mock-stat-label-2', 'mock-stat-label-3'],
+    border:        ['mock-table', 'mock-thead-row'],
+    success:       ['mock-tag-1'],
+    warning:       ['mock-tag-2'],
+    error:         [],
+  };
+
+  const highlightHandler = (e) => {
+    const ids = slotElementMap[e.detail.slot] || [];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('mock-highlight');
+    });
+  };
+
+  const unhighlightHandler = (e) => {
+    const ids = slotElementMap[e.detail.slot] || [];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('mock-highlight');
+    });
+  };
+
+  document.addEventListener('slot-highlight', highlightHandler);
+  document.addEventListener('slot-unhighlight', unhighlightHandler);
+
+  // Track for cleanup
+  _unsubscribers.push(() => {
+    document.removeEventListener('slot-highlight', highlightHandler);
+    document.removeEventListener('slot-unhighlight', unhighlightHandler);
+  });
+
   // Initial apply
   applyPaletteToPreview();
 }

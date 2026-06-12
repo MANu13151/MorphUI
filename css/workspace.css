@@ -184,12 +184,33 @@
   color: var(--color-text-tertiary);
 }
 
+.color-slot-desc {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  opacity: 0.7;
+  line-height: 1.2;
+  margin-bottom: 1px;
+}
+
 .color-slot-copy {
   opacity: 0;
   transition: opacity var(--transition-fast);
 }
 
 .color-slot:hover .color-slot-copy { opacity: 1; }
+
+/* ---- Hover Highlight on Preview Elements ---- */
+@keyframes mockHighlightPulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--color-brand-primary), 0 0 8px var(--color-brand-primary-glow); }
+  50%      { box-shadow: 0 0 0 3px var(--color-brand-primary), 0 0 16px var(--color-brand-primary-glow); }
+}
+
+.mock-highlight {
+  animation: mockHighlightPulse 1s ease-in-out infinite;
+  border-radius: 4px;
+  position: relative;
+  z-index: 10;
+}
 
 /* ---- Inline Color Editor ---- */
 .color-editor-expanded {
