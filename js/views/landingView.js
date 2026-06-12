@@ -91,6 +91,15 @@ export function renderLanding() {
       </div>
     </div>
 
+    <!-- First Visit Nudge (only for new users) -->
+    <div class="first-visit-nudge" id="first-visit-nudge" style="display:none">
+      <span class="first-visit-text">👋 First time here?</span>
+      <button class="first-visit-btn" id="first-visit-btn">See how it works ↓</button>
+      <button class="first-visit-close" id="first-visit-close" aria-label="Dismiss">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
     <!-- Hero Preview Mockup -->
     <div class="hero-preview" id="hero-preview">
       <div class="hero-preview-window">
@@ -396,6 +405,31 @@ export function initLanding() {
       sessionStorage.setItem('morphui_explore_mode', 'true');
       navigate('/workspace');
     });
+  }
+
+  // First-visit nudge — show only if user hasn't visited before
+  const firstVisitNudge = document.getElementById('first-visit-nudge');
+  if (firstVisitNudge && !localStorage.getItem('morphui_seen_intro')) {
+    // Show with a slight delay so the page settles first
+    setTimeout(() => {
+      firstVisitNudge.style.display = 'flex';
+      // Trigger animation
+      requestAnimationFrame(() => firstVisitNudge.classList.add('visible'));
+    }, 1500);
+
+    const dismissNudge = () => {
+      localStorage.setItem('morphui_seen_intro', 'true');
+      firstVisitNudge.classList.remove('visible');
+      setTimeout(() => { firstVisitNudge.style.display = 'none'; }, 300);
+    };
+
+    document.getElementById('first-visit-btn')?.addEventListener('click', () => {
+      dismissNudge();
+      const target = document.getElementById('how-it-works');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('first-visit-close')?.addEventListener('click', dismissNudge);
   }
 
   // Feedback widget

@@ -339,6 +339,66 @@
   text-underline-offset: 2px;
 }
 
+/* ---- First Visit Nudge ---- */
+.first-visit-nudge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-brand-primary-glow);
+  border-radius: var(--radius-full);
+  backdrop-filter: var(--glass-blur);
+  margin-top: var(--space-6);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.first-visit-nudge.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.first-visit-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.first-visit-btn {
+  background: none;
+  border: none;
+  color: var(--color-brand-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: color var(--transition-base);
+  white-space: nowrap;
+}
+
+.first-visit-btn:hover {
+  color: var(--color-brand-primary-hover);
+}
+
+.first-visit-close {
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.first-visit-close:hover {
+  color: var(--color-text-primary);
+  background: var(--glass-bg-hover);
+}
+
 /* ---- Hero Preview Mockup ---- */
 .hero-preview {
   position: relative;
