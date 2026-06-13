@@ -687,7 +687,7 @@ async function selectAndRenderFrame(frame, token, fileKey) {
     });
 
     showToast(
-      `"${frame.name}" imported! ${frameColors.length} colors mapped. ` +
+      `"${frame.name}" imported! ${_frameColors.length} colors mapped. ` +
       `Change any color — your design updates in real-time!`
     );
 
