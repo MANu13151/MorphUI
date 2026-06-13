@@ -295,7 +295,8 @@ export function initWorkspace() {
 // ---- Figma Reconstruction State ----
 let _parsedSchema = null;       // Parsed frame schema from figmaParser
 let _colorMapping = {};         // { hex: slotKey } for CSS variable binding
-let _extractedMapping = null;   // { slot: originalHex } from autoMap — for mapping panel
+let _frameColors = [];          // All extracted colors from frame node tree
+let _currentFrameNode = null;   // Stored frame node for synchronous remapping
 let _paletteUnsub = null;       // Palette subscription cleanup
 let _figmaFrames = [];          // Available frames from file
 let _selectedFrameId = null;    // Currently selected frame ID
@@ -619,14 +620,36 @@ async function selectAndRenderFrame(frame, token, fileKey) {
 
     // Extract colors from this frame only
     document.getElementById('figma-load-status').textContent = 'Extracting colors...';
-    const frameColors = extractColorsFromNode(frameNode);
-    const autoMapped = autoMapColorsToPalette(frameColors);
+    _currentFrameNode = frameNode;
 
-    // Store for mapping panel
-    _extractedMapping = autoMapped ? { ...autoMapped } : null;
+    // Extract root frame background color if possible
+    let rootBackgroundHex = null;
+    if (frameNode.fills && Array.isArray(frameNode.fills)) {
+      const solid = frameNode.fills.find(f => f.type === 'SOLID' && f.visible !== false);
+      if (solid?.color) {
+        const r = Math.round((solid.color.r || 0) * 255);
+        const g = Math.round((solid.color.g || 0) * 255);
+        const b = Math.round((solid.color.b || 0) * 255);
+        rootBackgroundHex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toLowerCase();
+      }
+    }
 
-    // Build color mapping (hex → slot name) for CSS variable binding
-    _colorMapping = buildColorMapping(autoMapped || {});
+    _frameColors = extractColorsFromNode(frameNode);
+    const autoMapped = autoMapColorsToPalette(_frameColors, rootBackgroundHex);
+
+    // Build initial color mapping (hex → slot name) for all extracted colors
+    _colorMapping = {};
+    _frameColors.forEach(c => {
+      _colorMapping[c.hex.toLowerCase()] = null;
+    });
+
+    if (autoMapped) {
+      Object.entries(autoMapped).forEach(([slot, hex]) => {
+        if (hex) {
+          _colorMapping[hex.toLowerCase()] = slot;
+        }
+      });
+    }
 
     // Apply extracted colors to our palette
     if (autoMapped) {
@@ -831,8 +854,28 @@ const SLOT_LABELS = {
   error: 'Error',
 };
 
+function highlightHexInPreview(hex) {
+  const previewContent = document.getElementById('preview-content');
+  if (!previewContent) return;
+  const lowerHex = hex.toLowerCase();
+
+  previewContent.querySelectorAll('[data-fill-hex], [data-stroke-hex], [data-text-hex]').forEach(el => {
+    const fillHex = el.dataset.fillHex || '';
+    const strokeHex = el.dataset.strokeHex || '';
+    const textHex = el.dataset.textHex || '';
+
+    const fillMatch = fillHex.split(',').includes(lowerHex);
+    const strokeMatch = strokeHex === lowerHex;
+    const textMatch = textHex === lowerHex;
+
+    if (fillMatch || strokeMatch || textMatch) {
+      el.classList.add('rc-highlight');
+    }
+  });
+}
+
 function renderColorMappingPanel() {
-  if (!_extractedMapping) return;
+  if (!_frameColors || _frameColors.length === 0) return;
 
   // Remove existing panel if any
   document.getElementById('color-mapping-section')?.remove();
@@ -844,11 +887,6 @@ function renderColorMappingPanel() {
   section.className = 'sidebar-section';
   section.id = 'color-mapping-section';
 
-  // Only show slots that have a mapped color
-  const mappedSlots = Object.entries(_extractedMapping).filter(
-    ([, hex]) => hex && !['success', 'warning', 'error'].includes(hex)
-  );
-
   section.innerHTML = `
     <div class="sidebar-section-header">
       <h3 class="sidebar-section-title">
@@ -857,7 +895,7 @@ function renderColorMappingPanel() {
       </h3>
     </div>
     <div class="mapping-panel" id="mapping-panel">
-      <p class="mapping-hint">Reassign extracted colors to palette slots</p>
+      <p class="mapping-hint">Hover a row to find color. Set dropdown to dynamic slot.</p>
       <div class="mapping-rows" id="mapping-rows"></div>
     </div>
   `;
@@ -866,57 +904,82 @@ function renderColorMappingPanel() {
   aiSection.after(section);
 
   const rowsContainer = section.querySelector('#mapping-rows');
-
-  // Build available slots list
   const availableSlots = Object.keys(SLOT_LABELS);
 
-  Object.entries(_extractedMapping).forEach(([slot, originalHex]) => {
-    if (!originalHex || ['success', 'warning', 'error'].includes(slot)) return;
+  _frameColors.forEach(({ hex, count }) => {
+    const slot = _colorMapping[hex.toLowerCase()] || '';
 
     const row = document.createElement('div');
     row.className = 'mapping-row';
+    row.dataset.hex = hex;
     row.innerHTML = `
       <div class="mapping-original">
-        <span class="mapping-swatch" style="background:${originalHex}"></span>
-        <span class="mapping-hex">${originalHex}</span>
+        <span class="mapping-swatch" style="background:${hex}"></span>
+        <span class="mapping-hex" title="${hex} (used ${count} times)">${hex}</span>
+        <span class="mapping-count">x${count}</span>
       </div>
       <span class="mapping-arrow">→</span>
-      <select class="mapping-dropdown" data-original-hex="${originalHex}" data-current-slot="${slot}">
+      <select class="mapping-dropdown" data-hex="${hex}">
+        <option value="" ${!slot ? 'selected' : ''}>— None (Static) —</option>
         ${availableSlots.map(s => `
           <option value="${s}" ${s === slot ? 'selected' : ''}>${SLOT_LABELS[s]}</option>
         `).join('')}
       </select>
-      <span class="mapping-current-swatch" style="background:${state.palette[slot] || originalHex}"></span>
+      <span class="mapping-current-swatch" style="background:${slot ? (state.palette[slot] || hex) : hex}"></span>
     `;
     rowsContainer.appendChild(row);
+  });
+
+  // Handle hover highlights
+  rowsContainer.querySelectorAll('.mapping-row').forEach(row => {
+    const hex = row.dataset.hex;
+    row.addEventListener('mouseenter', () => {
+      clearPreviewHighlights();
+      highlightHexInPreview(hex);
+    });
+    row.addEventListener('mouseleave', () => {
+      clearPreviewHighlights();
+    });
   });
 
   // Handle reassignment
   rowsContainer.querySelectorAll('.mapping-dropdown').forEach(sel => {
     sel.addEventListener('change', (e) => {
-      const originalHex = e.target.dataset.originalHex;
-      const oldSlot = e.target.dataset.currentSlot;
+      const hex = e.target.dataset.hex.toLowerCase();
       const newSlot = e.target.value;
+      const oldSlot = _colorMapping[hex];
 
       if (oldSlot === newSlot) return;
 
-      // Update the mapping
-      _extractedMapping[newSlot] = originalHex;
-      delete _extractedMapping[oldSlot];
+      // Update local mapping
+      if (newSlot) {
+        _colorMapping[hex] = newSlot;
+        state.setColor(newSlot, hex);
+      } else {
+        delete _colorMapping[hex];
+      }
 
-      // Rebuild color mapping
-      _colorMapping = buildColorMapping(_extractedMapping);
+      // Re-parse frame node and re-render reconstruction
+      if (_currentFrameNode) {
+        _parsedSchema = parseFrame(_currentFrameNode, _colorMapping);
 
-      // Apply the color to the new slot
-      state.setColor(newSlot, originalHex);
+        // Update usage map
+        const usageMap = buildUsageMap(_parsedSchema);
+        state._colorUsageMap = usageMap;
 
-      // Update the data attribute
-      e.target.dataset.currentSlot = newSlot;
+        // Re-render the Figma view
+        renderReconstructionView();
+        addPreviewClickHandler();
+      }
 
-      // Re-render the panel to reflect swaps
+      // Re-render panel
       renderColorMappingPanel();
 
-      showToast(`Moved ${originalHex} → ${SLOT_LABELS[newSlot]}`);
+      if (newSlot) {
+        showToast(`Mapped ${hex} → ${SLOT_LABELS[newSlot]}`);
+      } else {
+        showToast(`Unmapped ${hex}`);
+      }
     });
   });
 }
@@ -952,9 +1015,9 @@ function addFigmaExportButton() {
 function generatePluginPayload() {
   const mappings = [];
 
-  if (_extractedMapping) {
-    Object.entries(_extractedMapping).forEach(([slot, originalHex]) => {
-      if (!originalHex) return;
+  if (_colorMapping) {
+    Object.entries(_colorMapping).forEach(([originalHex, slot]) => {
+      if (!slot) return;
       const currentHex = state.palette[slot];
       if (currentHex && currentHex.toLowerCase() !== originalHex.toLowerCase()) {
         mappings.push({

@@ -166,6 +166,11 @@ function applyFill(el, fill, gradient) {
     } else {
       el.style.background = `radial-gradient(circle, ${stops})`;
     }
+
+    const hexes = gradient.stops.map(s => s.color?.hex?.toLowerCase()).filter(Boolean);
+    if (hexes.length > 0) {
+      el.dataset.fillHex = hexes.join(',');
+    }
     return;
   }
 
@@ -177,6 +182,7 @@ function applyFill(el, fill, gradient) {
   } else {
     el.style.backgroundColor = fill.hex;
   }
+  el.dataset.fillHex = fill.hex.toLowerCase();
 }
 
 function applyStroke(el, stroke, weight) {
@@ -184,6 +190,7 @@ function applyStroke(el, stroke, weight) {
   const color = stroke.var ? `var(${stroke.var})` : stroke.hex;
   el.style.border = `${weight}px solid ${color}`;
   if (stroke.var) el.dataset.strokeVar = stroke.var;
+  el.dataset.strokeHex = stroke.hex.toLowerCase();
 }
 
 function applyRadius(el, radius) {
@@ -223,5 +230,6 @@ function renderText(el, node) {
     } else {
       el.style.color = node.textColor.hex;
     }
+    el.dataset.textHex = node.textColor.hex.toLowerCase();
   }
 }

@@ -232,7 +232,7 @@ export function extractColorsFromFile(fileData) {
  * Auto-map extracted Figma colors to palette slots.
  * Uses heuristics: darkest → background, lightest → text, most saturated → primary, etc.
  */
-export function autoMapColorsToPalette(figmaColors) {
+export function autoMapColorsToPalette(figmaColors, rootBackgroundHex = null) {
   if (figmaColors.length === 0) return null;
 
   function getLuminance(hex) {
@@ -255,40 +255,74 @@ export function autoMapColorsToPalette(figmaColors) {
   const chromatic = figmaColors.filter(c => getSaturation(c.hex) > 0.15);
   const neutrals = figmaColors.filter(c => getSaturation(c.hex) <= 0.15);
 
+  const isLight = rootBackgroundHex ? (getLuminance(rootBackgroundHex) > 0.5) : false;
   const palette = {};
 
-  // Background: darkest neutral
-  const darkNeutrals = neutrals.filter(c => getLuminance(c.hex) < 0.3);
-  palette.background = darkNeutrals.length > 0
-    ? darkNeutrals.sort((a, b) => getLuminance(a.hex) - getLuminance(b.hex))[0].hex
-    : '#09090b';
+  if (isLight) {
+    // --- LIGHT MODE AUTO-MAPPING ---
+    palette.background = rootBackgroundHex;
 
-  // Surface: slightly lighter than background
-  const surfaceCandidates = neutrals.filter(c => {
-    const l = getLuminance(c.hex);
-    return l > getLuminance(palette.background) && l < 0.4;
-  });
-  palette.surface = surfaceCandidates.length > 0 ? surfaceCandidates[0].hex : '#1e1e24';
+    // Surface: slightly darker than background
+    const surfaceCandidates = neutrals.filter(c => {
+      const l = getLuminance(c.hex);
+      return l < getLuminance(palette.background) && l > 0.6;
+    });
+    palette.surface = surfaceCandidates.length > 0 ? surfaceCandidates[0].hex : '#f4f4f5';
 
-  // Text: lightest neutral
-  const lightNeutrals = neutrals.filter(c => getLuminance(c.hex) > 0.7);
-  palette.text = lightNeutrals.length > 0
-    ? lightNeutrals.sort((a, b) => getLuminance(b.hex) - getLuminance(a.hex))[0].hex
-    : '#f4f4f5';
+    // Text: darkest neutral
+    const darkNeutrals = neutrals.filter(c => getLuminance(c.hex) < 0.3);
+    palette.text = darkNeutrals.length > 0
+      ? darkNeutrals.sort((a, b) => getLuminance(a.hex) - getLuminance(b.hex))[0].hex
+      : '#09090b';
 
-  // Text secondary: medium-light neutral
-  const medNeutrals = neutrals.filter(c => {
-    const l = getLuminance(c.hex);
-    return l > 0.3 && l < 0.7;
-  });
-  palette.textSecondary = medNeutrals.length > 0 ? medNeutrals[0].hex : '#a1a1aa';
+    // Text secondary: medium-dark neutral
+    const medNeutrals = neutrals.filter(c => {
+      const l = getLuminance(c.hex);
+      return l >= 0.3 && l <= 0.7;
+    });
+    palette.textSecondary = medNeutrals.length > 0 ? medNeutrals[0].hex : '#71717a';
 
-  // Border: dark-ish neutral
-  const borderCandidates = neutrals.filter(c => {
-    const l = getLuminance(c.hex);
-    return l > 0.1 && l < 0.3;
-  });
-  palette.border = borderCandidates.length > 0 ? borderCandidates[0].hex : '#27272a';
+    // Border: light neutral
+    const borderCandidates = neutrals.filter(c => {
+      const l = getLuminance(c.hex);
+      return l > 0.7 && l < 0.95;
+    });
+    palette.border = borderCandidates.length > 0 ? borderCandidates[0].hex : '#e4e4e7';
+  } else {
+    // --- DARK MODE AUTO-MAPPING ---
+    // Background: darkest neutral
+    const darkNeutrals = neutrals.filter(c => getLuminance(c.hex) < 0.3);
+    palette.background = rootBackgroundHex || (darkNeutrals.length > 0
+      ? darkNeutrals.sort((a, b) => getLuminance(a.hex) - getLuminance(b.hex))[0].hex
+      : '#09090b');
+
+    // Surface: slightly lighter than background
+    const surfaceCandidates = neutrals.filter(c => {
+      const l = getLuminance(c.hex);
+      return l > getLuminance(palette.background) && l < 0.4;
+    });
+    palette.surface = surfaceCandidates.length > 0 ? surfaceCandidates[0].hex : '#1e1e24';
+
+    // Text: lightest neutral
+    const lightNeutrals = neutrals.filter(c => getLuminance(c.hex) > 0.7);
+    palette.text = lightNeutrals.length > 0
+      ? lightNeutrals.sort((a, b) => getLuminance(b.hex) - getLuminance(a.hex))[0].hex
+      : '#f4f4f5';
+
+    // Text secondary: medium-light neutral
+    const medNeutrals = neutrals.filter(c => {
+      const l = getLuminance(c.hex);
+      return l > 0.3 && l < 0.7;
+    });
+    palette.textSecondary = medNeutrals.length > 0 ? medNeutrals[0].hex : '#a1a1aa';
+
+    // Border: dark-ish neutral
+    const borderCandidates = neutrals.filter(c => {
+      const l = getLuminance(c.hex);
+      return l > 0.1 && l < 0.3;
+    });
+    palette.border = borderCandidates.length > 0 ? borderCandidates[0].hex : '#27272a';
+  }
 
   // Primary: most frequent chromatic color
   palette.primary = chromatic[0]?.hex || bySaturation[0]?.hex || '#818cf8';
