@@ -3,6 +3,7 @@
 // ============================================
 
 import { state } from './state.js';
+import { hexToHsl, hslToHex } from './colorUtils.js';
 
 /**
  * Curated palette presets indexed by mood × personality
@@ -129,32 +130,93 @@ export function initAiPalette() {
   document.getElementById('btn-generate-palette')?.addEventListener('click', generatePalettes);
 }
 
+function generateHarmonizedPalettes(seedHex, harmonyType) {
+  let color = seedHex;
+  if (seedHex.includes('gradient')) {
+    const hexRegex = /#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})\b/;
+    const match = seedHex.match(hexRegex);
+    if (match) color = match[0];
+  }
+
+  const hsl = hexToHsl(color);
+  const palettes = [];
+
+  const configs = [
+    { bgL: 8, surfL: 14, borderL: 20, textL: 96, textSecL: 65, satMult: 1 },
+    { bgL: 4, surfL: 8, borderL: 14, textL: 92, textSecL: 55, satMult: 0.8 },
+    { bgL: 98, surfL: 94, borderL: 86, textL: 10, textSecL: 40, satMult: 0.9 },
+    { bgL: 96, surfL: 90, borderL: 80, textL: 15, textSecL: 45, satMult: 0.6 },
+  ];
+
+  configs.forEach(config => {
+    const pal = {};
+    const h = hsl.h;
+    const s = Math.round(hsl.s * config.satMult);
+    const l = hsl.l;
+
+    if (harmonyType === 'monochromatic') {
+      pal.primary = color;
+      pal.secondary = hslToHex(h, s, Math.max(15, Math.min(85, l - 15)));
+      pal.accent = hslToHex(h, Math.max(10, s - 20), Math.max(15, Math.min(85, l + 15)));
+    } else if (harmonyType === 'analogous') {
+      pal.primary = color;
+      pal.secondary = hslToHex((h + 30) % 360, s, l);
+      pal.accent = hslToHex((h - 30 + 360) % 360, s, l);
+    } else if (harmonyType === 'triadic') {
+      pal.primary = color;
+      pal.secondary = hslToHex((h + 120) % 360, s, l);
+      pal.accent = hslToHex((h + 240) % 360, s, l);
+    } else if (harmonyType === 'complementary') {
+      pal.primary = color;
+      pal.secondary = hslToHex(h, Math.max(10, s - 15), Math.max(15, Math.min(85, l - 15)));
+      pal.accent = hslToHex((h + 180) % 360, s, l);
+    }
+
+    pal.background = hslToHex(h, Math.min(12, s), config.bgL);
+    pal.surface = hslToHex(h, Math.min(12, s), config.surfL);
+    pal.border = hslToHex(h, Math.min(12, s), config.borderL);
+    pal.text = hslToHex(h, Math.min(8, s), config.textL);
+    pal.textSecondary = hslToHex(h, Math.min(8, s), config.textSecL);
+
+    pal.success = '#2dd4a8';
+    pal.warning = '#f5a623';
+    pal.error = '#f87171';
+
+    palettes.push(pal);
+  });
+
+  return palettes;
+}
+
 function generatePalettes() {
   const btn = document.getElementById('btn-generate-palette');
   const container = document.getElementById('ai-suggestions');
   if (!btn || !container) return;
 
-  // Loading state
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Generating...';
 
-  // Simulate AI processing
+  const genMode = document.getElementById('ai-gen-mode')?.value || 'presets';
+
   setTimeout(() => {
-    const moodPalettes = PALETTES[selectedMood];
-    const personalityPalettes = moodPalettes?.[selectedPersonality] || [];
+    let allOptions = [];
 
-    // Also grab from other personalities in same mood for variety
-    let allOptions = [...personalityPalettes];
-    Object.entries(moodPalettes || {}).forEach(([key, palettes]) => {
-      if (key !== selectedPersonality) {
-        allOptions.push(...palettes);
-      }
-    });
+    if (genMode === 'presets') {
+      const moodPalettes = PALETTES[selectedMood];
+      const personalityPalettes = moodPalettes?.[selectedPersonality] || [];
 
-    // Shuffle and pick up to 4
-    allOptions = shuffleArray(allOptions).slice(0, 4);
+      allOptions = [...personalityPalettes];
+      Object.entries(moodPalettes || {}).forEach(([key, palettes]) => {
+        if (key !== selectedPersonality) {
+          allOptions.push(...palettes);
+        }
+      });
+      allOptions = shuffleArray(allOptions).slice(0, 4);
+    } else {
+      const seedHex = state.palette.primary;
+      allOptions = generateHarmonizedPalettes(seedHex, genMode);
+    }
 
-    // Render suggestion cards
     container.innerHTML = allOptions.map((pal, i) => `
       <div class="ai-palette-card" data-palette-index="${i}">
         <div class="ai-palette-swatches">
@@ -169,14 +231,12 @@ function generatePalettes() {
       </div>
     `).join('');
 
-    // Bind apply buttons
     container.querySelectorAll('.ai-palette-card').forEach((card, i) => {
       card.addEventListener('click', () => {
         state.setPalette(allOptions[i]);
       });
     });
 
-    // Reset button
     btn.disabled = false;
     btn.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>

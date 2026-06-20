@@ -2,6 +2,7 @@
 // MORPHUI — Figma Reconstruction Renderer
 // Renders internal schema as HTML/CSS using CSS variables
 // ============================================
+import { state } from './state.js';
 
 /**
  * Render a parsed frame schema into a DOM container.
@@ -177,7 +178,13 @@ function applyFill(el, fill, gradient) {
   if (!fill) return;
 
   if (fill.var) {
-    el.style.backgroundColor = `var(${fill.var})`;
+    const slot = fill.var.replace('--p-', '');
+    const val = state.palette[slot] || '';
+    if (val.includes('gradient')) {
+      el.style.background = `var(${fill.var})`;
+    } else {
+      el.style.backgroundColor = `var(${fill.var})`;
+    }
     el.dataset.fillVar = fill.var;
   } else {
     el.style.backgroundColor = fill.hex;

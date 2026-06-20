@@ -5,6 +5,7 @@ import { initLivePreview } from '../livePreview.js';
 import { initExportPanel } from '../exportPanel.js';
 import { initAccessibility } from '../accessibility.js';
 import { showToast } from '../toast.js';
+import { getLuminance, hexToHsl, hslToHex } from '../colorUtils.js';
 import {
   parseFigmaUrl,
   fetchFileData,
@@ -68,10 +69,15 @@ export function renderWorkspace() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="16" r="2.5"/><circle cx="8" cy="16" r="2.5"/></svg>
             Color Palette
           </h3>
-          <label class="toggle tooltip" data-tooltip="Apply to all similar">
-            <input type="checkbox" id="apply-all-toggle">
-            <span class="toggle-slider"></span>
-          </label>
+          <div style="display:flex;gap:var(--space-2);align-items:center;">
+            <button class="btn-icon tooltip" data-tooltip="Swap Design Theme (Light/Dark)" id="btn-design-theme-swap" style="width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--color-text-secondary);display:flex;align-items:center;justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L13 16M17 20L21 16"/></svg>
+            </button>
+            <label class="toggle tooltip" data-tooltip="Apply to all similar">
+              <input type="checkbox" id="apply-all-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
         <div class="color-slot-list" id="color-slot-list"></div>
       </div>
@@ -103,6 +109,18 @@ export function renderWorkspace() {
               <button class="chip" data-personality="playful">Playful</button>
               <button class="chip" data-personality="luxury">Luxury</button>
               <button class="chip" data-personality="techy">Techy</button>
+            </div>
+          </div>
+          <div>
+            <span class="label">Generation Mode</span>
+            <div style="margin-top:var(--space-1)">
+              <select id="ai-gen-mode" class="mapping-dropdown" style="padding:6px 12px;font-size:12px;width:100%;height:32px;">
+                <option value="presets">Curated Presets (Mood & Personality)</option>
+                <option value="monochromatic">Color Harmony: Monochromatic</option>
+                <option value="analogous">Color Harmony: Analogous</option>
+                <option value="triadic">Color Harmony: Triadic</option>
+                <option value="complementary">Color Harmony: Complementary</option>
+              </select>
             </div>
           </div>
           <button class="btn btn-primary ai-generate-btn" id="btn-generate-palette">
@@ -283,6 +301,11 @@ export function initWorkspace() {
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
     state.isDark = !state.isDark;
     localStorage.setItem('morphui_theme', state.isDark ? 'dark' : 'light');
+  });
+
+  // Design theme swapper
+  document.getElementById('btn-design-theme-swap')?.addEventListener('click', () => {
+    swapDesignTheme();
   });
 
   // Return cleanup
@@ -1037,4 +1060,36 @@ function generatePluginPayload() {
     palette: { ...state.palette },
     mappings,
   };
+}
+
+function swapDesignTheme() {
+  const current = { ...state.palette };
+
+  const bgLuminance = getLuminance(current.background);
+  const isLight = bgLuminance > 0.5;
+
+  const newPalette = { ...current };
+
+  const invertNeutral = (hex, targetLuminance) => {
+    const hsl = hexToHsl(hex);
+    hsl.l = Math.round(targetLuminance * 100);
+    return hslToHex(hsl.h, hsl.s, hsl.l);
+  };
+
+  if (isLight) {
+    newPalette.background = invertNeutral(current.background, 0.05);
+    newPalette.surface = invertNeutral(current.surface, 0.12);
+    newPalette.border = invertNeutral(current.border, 0.18);
+    newPalette.text = invertNeutral(current.text, 0.95);
+    newPalette.textSecondary = invertNeutral(current.textSecondary, 0.65);
+  } else {
+    newPalette.background = invertNeutral(current.background, 0.98);
+    newPalette.surface = invertNeutral(current.surface, 0.94);
+    newPalette.border = invertNeutral(current.border, 0.88);
+    newPalette.text = invertNeutral(current.text, 0.05);
+    newPalette.textSecondary = invertNeutral(current.textSecondary, 0.40);
+  }
+
+  state.setPalette(newPalette);
+  showToast(`Converted design to ${isLight ? 'Dark' : 'Light'} Mode!`);
 }

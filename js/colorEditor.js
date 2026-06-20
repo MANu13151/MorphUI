@@ -1,5 +1,5 @@
 import { state, SLOT_LABELS } from './state.js';
-import { hexToRgb, rgbToHex, hexToHsl, hslToHex, isValidHex, normalizeHex } from './colorUtils.js';
+import { hexToRgb, rgbToHex, hexToHsl, hslToHex, isValidHex, normalizeHex, adjustLightness } from './colorUtils.js';
 import { showToast } from './toast.js';
 
 let activeEditorSlot = null;
@@ -141,53 +141,181 @@ function truncate(str, max) {
   return str.length > max ? str.slice(0, max) + '…' : str;
 }
 
-function buildExpandedEditor(key, color) {
-  const rgb = hexToRgb(color);
-  const hsl = hexToHsl(color);
+function parseGradient(str) {
+  const defaultGrad = { stop1: '#ff6b4a', stop2: '#f5a623', angle: 135, type: 'linear' };
+  if (!str || !str.includes('gradient')) return defaultGrad;
 
-  return `
-    <div class="color-editor-expanded" data-editor-slot="${key}">
-      <div class="hex-input-row">
-        <input type="color" class="native-color-picker" value="${color}" data-picker-slot="${key}">
-        <input type="text" class="hex-input input-mono" value="${color.toUpperCase()}" data-hex-slot="${key}" maxlength="7" placeholder="#000000">
-      </div>
-      <div class="color-input-row">
-        <div class="color-input-group">
-          <label>R</label>
-          <input type="number" min="0" max="255" value="${rgb.r}" data-rgb="r" data-rgb-slot="${key}">
-        </div>
-        <div class="color-input-group">
-          <label>G</label>
-          <input type="number" min="0" max="255" value="${rgb.g}" data-rgb="g" data-rgb-slot="${key}">
-        </div>
-        <div class="color-input-group">
-          <label>B</label>
-          <input type="number" min="0" max="255" value="${rgb.b}" data-rgb="b" data-rgb-slot="${key}">
-        </div>
-      </div>
-      <div>
-        <label class="label" style="margin-bottom:var(--space-1)">Hue ${hsl.h}°</label>
-        <input type="range" class="color-slider" min="0" max="360" value="${hsl.h}" data-hsl="h" data-hsl-slot="${key}"
-          style="background:linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)">
-      </div>
-      <div>
-        <label class="label" style="margin-bottom:var(--space-1)">Saturation ${hsl.s}%</label>
-        <input type="range" class="color-slider" min="0" max="100" value="${hsl.s}" data-hsl="s" data-hsl-slot="${key}">
-      </div>
-      <div>
-        <label class="label" style="margin-bottom:var(--space-1)">Lightness ${hsl.l}%</label>
-        <input type="range" class="color-slider" min="0" max="100" value="${hsl.l}" data-hsl="l" data-hsl-slot="${key}">
-      </div>
+  try {
+    const isLinear = str.includes('linear');
+    const angleMatch = str.match(/(\d+)deg/);
+    const angle = angleMatch ? parseInt(angleMatch[1]) : 135;
+
+    const hexRegex = /#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})\b/g;
+    const colors = str.match(hexRegex) || [];
+    const stop1 = colors[0] || '#ff6b4a';
+    const stop2 = colors[1] || '#f5a623';
+
+    return { stop1, stop2, angle, type: isLinear ? 'linear' : 'radial' };
+  } catch {
+    return defaultGrad;
+  }
+}
+
+function buildExpandedEditor(key, color) {
+  const isGradient = color.includes('gradient');
+
+  let tabHTML = `
+    <div class="color-editor-tabs">
+      <button class="editor-tab ${!isGradient ? 'active' : ''}" data-tab-type="solid" data-slot="${key}">Solid</button>
+      <button class="editor-tab ${isGradient ? 'active' : ''}" data-tab-type="gradient" data-slot="${key}">Gradient</button>
     </div>
   `;
+
+  if (!isGradient) {
+    const rgb = hexToRgb(color);
+    const hsl = hexToHsl(color);
+
+    return `
+      <div class="color-editor-expanded" data-editor-slot="${key}">
+        ${tabHTML}
+        <div class="hex-input-row">
+          <input type="color" class="native-color-picker" value="${color}" data-picker-slot="${key}">
+          <input type="text" class="hex-input input-mono" value="${color.toUpperCase()}" data-hex-slot="${key}" maxlength="7" placeholder="#000000">
+        </div>
+        <div class="color-input-row">
+          <div class="color-input-group">
+            <label>R</label>
+            <input type="number" min="0" max="255" value="${rgb.r}" data-rgb="r" data-rgb-slot="${key}">
+          </div>
+          <div class="color-input-group">
+            <label>G</label>
+            <input type="number" min="0" max="255" value="${rgb.g}" data-rgb="g" data-rgb-slot="${key}">
+          </div>
+          <div class="color-input-group">
+            <label>B</label>
+            <input type="number" min="0" max="255" value="${rgb.b}" data-rgb="b" data-rgb-slot="${key}">
+          </div>
+        </div>
+        <div>
+          <label class="label" style="margin-bottom:var(--space-1)">Hue ${hsl.h}°</label>
+          <input type="range" class="color-slider" min="0" max="360" value="${hsl.h}" data-hsl="h" data-hsl-slot="${key}"
+            style="background:linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)">
+        </div>
+        <div>
+          <label class="label" style="margin-bottom:var(--space-1)">Saturation ${hsl.s}%</label>
+          <input type="range" class="color-slider" min="0" max="100" value="${hsl.s}" data-hsl="s" data-hsl-slot="${key}">
+        </div>
+        <div>
+          <label class="label" style="margin-bottom:var(--space-1)">Lightness ${hsl.l}%</label>
+          <input type="range" class="color-slider" min="0" max="100" value="${hsl.l}" data-hsl="l" data-hsl-slot="${key}">
+        </div>
+      </div>
+    `;
+  } else {
+    const { stop1, stop2, angle } = parseGradient(color);
+    return `
+      <div class="color-editor-expanded" data-editor-slot="${key}">
+        ${tabHTML}
+        <div class="gradient-editor-inputs">
+          <div class="gradient-stop-row">
+            <label>Stop 1</label>
+            <input type="color" class="gradient-color-picker" data-stop="1" data-slot="${key}" value="${stop1}">
+            <input type="text" class="gradient-hex-input input-mono" data-stop="1" data-slot="${key}" value="${stop1.toUpperCase()}" maxlength="7">
+          </div>
+          <div class="gradient-stop-row">
+            <label>Stop 2</label>
+            <input type="color" class="gradient-color-picker" data-stop="2" data-slot="${key}" value="${stop2}">
+            <input type="text" class="gradient-hex-input input-mono" data-stop="2" data-slot="${key}" value="${stop2.toUpperCase()}" maxlength="7">
+          </div>
+          <div class="gradient-angle-row">
+            <div style="display:flex;justify-content:between;margin-bottom:var(--space-1)">
+              <label class="label">Angle ${angle}°</label>
+            </div>
+            <input type="range" class="color-slider" min="0" max="360" value="${angle}" data-angle-slot="${key}">
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 function bindExpandedEditorEvents(container) {
+  // Gradient tabs
+  container.querySelectorAll('.editor-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const slot = tab.dataset.slot;
+      const type = tab.dataset.tabType;
+      const currentColor = state.getColor(slot);
+
+      if (type === 'gradient' && !currentColor.includes('gradient')) {
+        // Convert solid to gradient
+        const stop1 = currentColor;
+        const stop2 = adjustLightness(currentColor, -15);
+        state.setColor(slot, `linear-gradient(135deg, ${stop1} 0%, ${stop2} 100%)`);
+      } else if (type === 'solid' && currentColor.includes('gradient')) {
+        // Convert gradient to solid
+        const { stop1 } = parseGradient(currentColor);
+        state.setColor(slot, stop1);
+      }
+    });
+  });
+
+  // Gradient color pickers & hex inputs
+  container.querySelectorAll('.gradient-color-picker, .gradient-hex-input').forEach(input => {
+    const eventType = input.classList.contains('gradient-color-picker') ? 'input' : 'change';
+    input.addEventListener(eventType, () => {
+      const slot = input.dataset.slot;
+      const stopIndex = input.dataset.stop;
+      const currentVal = state.getColor(slot);
+      const { stop1, stop2, angle } = parseGradient(currentVal);
+
+      let newVal = input.value.trim();
+      if (eventType === 'change') {
+        if (!newVal.startsWith('#')) newVal = '#' + newVal;
+        if (!isValidHex(newVal)) {
+          input.value = (stopIndex === '1' ? stop1 : stop2).toUpperCase();
+          return;
+        }
+        newVal = normalizeHex(newVal);
+      }
+
+      const s1 = stopIndex === '1' ? newVal : stop1;
+      const s2 = stopIndex === '2' ? newVal : stop2;
+
+      state.setColor(slot, `linear-gradient(${angle}deg, ${s1} 0%, ${s2} 100%)`);
+    });
+  });
+
+  // Gradient angle slider
+  container.querySelectorAll('[data-angle-slot]').forEach(slider => {
+    slider.addEventListener('input', () => {
+      const slot = slider.dataset.angleSlot;
+      const currentVal = state.getColor(slot);
+      const { stop1, stop2 } = parseGradient(currentVal);
+      const angle = slider.value;
+
+      state.setColor(slot, `linear-gradient(${angle}deg, ${stop1} 0%, ${stop2} 100%)`, false); // don't flood history on drag
+    });
+    slider.addEventListener('change', () => {
+      const slot = slider.dataset.angleSlot;
+      const currentVal = state.getColor(slot);
+      const { stop1, stop2 } = parseGradient(currentVal);
+      const angle = slider.value;
+
+      state.setColor(slot, `linear-gradient(${angle}deg, ${stop1} 0%, ${stop2} 100%)`, true); // commit to history on release
+    });
+  });
+
   // Native color picker
   container.querySelectorAll('.native-color-picker').forEach(picker => {
     picker.addEventListener('input', (e) => {
       const slot = picker.dataset.pickerSlot;
-      state.setColor(slot, e.target.value);
+      state.setColor(slot, e.target.value, false);
+    });
+    picker.addEventListener('change', (e) => {
+      const slot = picker.dataset.pickerSlot;
+      state.setColor(slot, e.target.value, true);
     });
   });
 
@@ -212,7 +340,14 @@ function bindExpandedEditorEvents(container) {
       const channel = input.dataset.rgb;
       const current = hexToRgb(state.getColor(slot));
       current[channel] = parseInt(input.value) || 0;
-      state.setColor(slot, rgbToHex(current.r, current.g, current.b));
+      state.setColor(slot, rgbToHex(current.r, current.g, current.b), false);
+    });
+    input.addEventListener('change', () => {
+      const slot = input.dataset.rgbSlot;
+      const channel = input.dataset.rgb;
+      const current = hexToRgb(state.getColor(slot));
+      current[channel] = parseInt(input.value) || 0;
+      state.setColor(slot, rgbToHex(current.r, current.g, current.b), true);
     });
   });
 
@@ -223,7 +358,14 @@ function bindExpandedEditorEvents(container) {
       const component = slider.dataset.hsl;
       const current = hexToHsl(state.getColor(slot));
       current[component] = parseInt(slider.value);
-      state.setColor(slot, hslToHex(current.h, current.s, current.l));
+      state.setColor(slot, hslToHex(current.h, current.s, current.l), false);
+    });
+    slider.addEventListener('change', () => {
+      const slot = slider.dataset.hslSlot;
+      const component = slider.dataset.hsl;
+      const current = hexToHsl(state.getColor(slot));
+      current[component] = parseInt(slider.value);
+      state.setColor(slot, hslToHex(current.h, current.s, current.l), true);
     });
   });
 }
@@ -232,7 +374,6 @@ function highlightActiveSlot() {
   document.querySelectorAll('.color-slot').forEach(el => {
     el.classList.toggle('active', el.dataset.slot === state.activeSlot);
   });
-  // Re-render to show/hide expanded editor
   const list = document.getElementById('color-slot-list');
   if (list) renderSlots(list);
 }
